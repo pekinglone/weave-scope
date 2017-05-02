@@ -1,5 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import { Map as makeMap } from 'immutable';
 
 import Logo from './logo';
 import ZoomWrapper from './zoom-wrapper';
@@ -12,15 +13,17 @@ import {
 
 
 class NodesResources extends React.Component {
-  renderLayers(transform) {
-    return this.props.layersTopologyIds.map((topologyId, index) => (
+  renderLayout(transform) {
+    return (
       <NodesResourcesLayer
-        key={topologyId}
-        topologyId={topologyId}
+        topologyId={this.props.layersTopologyIds.first()}
+        nodesIds={this.props.baseNodesIds}
         transform={transform}
-        slot={index}
+        offset={0}
+        width={100}
+        scale={1}
       />
-    ));
+    );
   }
 
   render() {
@@ -32,7 +35,7 @@ class NodesResources extends React.Component {
             svg="canvas" bounded forwardTransform fixVertical
             zoomLimitsSelector={resourcesZoomLimitsSelector}
             zoomStateSelector={resourcesZoomStateSelector}>
-            {transform => this.renderLayers(transform)}
+            {transform => this.renderLayout(transform)}
           </ZoomWrapper>
         </svg>
       </div>
@@ -42,6 +45,7 @@ class NodesResources extends React.Component {
 
 function mapStateToProps(state) {
   return {
+    baseNodesIds: state.get(['nodesByTopologyId', 'hosts'], makeMap()).map(n => n.get('id')),
     layersTopologyIds: layersTopologyIdsSelector(state),
   };
 }

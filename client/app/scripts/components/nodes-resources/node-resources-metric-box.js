@@ -47,6 +47,7 @@ class NodeResourcesMetricBox extends React.Component {
   constructor(props, context) {
     super(props, context);
 
+    this.clickNode = this.clickNode.bind(this);
     this.state = transformedDimensions(props);
   }
 
@@ -68,6 +69,10 @@ class NodeResourcesMetricBox extends React.Component {
     };
   }
 
+  clickNode() {
+    console.log(this.props.meta.toJS());
+  }
+
   render() {
     const { x, y, width } = this.state;
     const { label, color, metricSummary } = this.props;
@@ -85,7 +90,7 @@ class NodeResourcesMetricBox extends React.Component {
       metricSummary.get('humanizedAbsoluteConsumption');
 
     return (
-      <g className="node-resources-metric-box">
+      <g className="node-resources-metric-box" onClick={this.clickNode}>
         <title>{label} - {type} usage at {resourceUsageTooltipInfo}</title>
         {showCapacity && <rect className="frame" {...this.defaultRectProps()} />}
         <rect className="bar" fill={color} {...this.defaultRectProps(relativeConsumption)} />

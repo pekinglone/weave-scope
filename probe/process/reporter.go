@@ -108,7 +108,7 @@ func (r *Reporter) processTopology() (report.Topology, error) {
 		}
 
 		if deltaTotal > 0 {
-			cpuUsage := float64(p.Jiffies-prev.Jiffies) / float64(deltaTotal) * 100.
+			cpuUsage := float64(p.Jiffies-prev.Jiffies) / float64(deltaTotal) * float64(maxCPU)
 			node = node.WithMetric(CPUUsage, report.MakeSingletonMetric(now, cpuUsage).WithMax(maxCPU))
 		}
 

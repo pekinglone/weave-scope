@@ -20,6 +20,7 @@ class NodesResourcesLayer extends React.Component {
           {layoutNodes.toIndexedSeq().map(node => (
             <NodeResourcesMetricBox
               key={node.get('id')}
+              meta={node.get('meta')}
               color={node.get('color')}
               label={node.get('label')}
               metricSummary={node.get('metricSummary')}

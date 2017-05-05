@@ -40,6 +40,7 @@ export function nodeMetricSummaryDecoratorByType(metricType, showCapacity, scale
     const percentMetric = { format: 'percent' };
     const format = metric.get('format');
 
+    node = node.set('meta', metric);
     return node.set('metricSummary', makeMap({
       showCapacity,
       type: metricType,

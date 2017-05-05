@@ -104,6 +104,7 @@ var GetMemoryUsageBytes = func() (float64, float64) {
 		return 0.0, 0.0
 	}
 
+	// Why like this?
 	used := meminfo.MemTotal - meminfo.MemFree - meminfo.Buffers - meminfo.Cached
 	return float64(used * kb), float64(meminfo.MemTotal * kb)
 }

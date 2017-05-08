@@ -85,8 +85,19 @@ export default class MatchedText extends React.PureComponent {
     const showFullValue = !truncate || (match && (match.start + match.length) > truncate);
     const displayText = showFullValue ? text : text.slice(0, truncate);
 
+    const s = displayText.split('/');
+    const st = {padding: 0, overflow: 'hidden', textOverflow: 'ellipsis'};
     if (!match) {
-      return <span>{displayText}</span>;
+      return (
+        <span className="blublu" style={{padding: 0, display: 'flex', justifyContent: 'center'}}>
+          {s.map((t, i) => (
+            <span className="bb" key={t} style={st}>
+              {i > 0 && '/'}
+              <span className="ch" style={{padding: 0}}>{t}</span>
+            </span>
+          ))}
+        </span>
+      );
     }
 
     const chunks = chunkText(displayText, match);

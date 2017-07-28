@@ -1,6 +1,6 @@
 import debug from 'debug';
 import reqwest from 'reqwest';
-import { defaults } from 'lodash';
+import { defaults, each } from 'lodash';
 import { Map as makeMap, List } from 'immutable';
 
 import {
@@ -38,15 +38,17 @@ const csrfToken = (() => {
   return token;
 })();
 
-let socket;
+// let socket;
 let reconnectTimer = 0;
 let topologyTimer = 0;
 let apiDetailsTimer = 0;
 let controlErrorTimer = 0;
-let currentUrl = null;
-let createWebsocketAt = null;
-let firstMessageOnWebsocketAt = null;
+// let currentUrl = null;
+// let createWebsocketAt = null;
+// let firstMessageOnWebsocketAt = null;
 let continuePolling = true;
+
+let websocketInfoByTopology = {};
 
 
 export function getSerializedTimeTravelTimestamp(state) {
@@ -114,7 +116,10 @@ function buildWebsocketUrl(topologyUrl, topologyOptions = makeMap(), state) {
   return `${getWebsocketUrl()}${topologyUrl}/ws?${optionsQuery}`;
 }
 
-function createWebsocket(websocketUrl, getState, dispatch) {
+function createWebsocket(topologyId, getState, dispatch) {
+  let { createdAt, firstMessageReceivedAt, socket } = websocketInfoByTopology[topologyId];
+  const { url } = websocketInfoByTopology[topologyId];
+
   if (socket) {
     socket.onclose = null;
     socket.onerror = null;
@@ -124,32 +129,32 @@ function createWebsocket(websocketUrl, getState, dispatch) {
   }
 
   // profiling
-  createWebsocketAt = new Date();
-  firstMessageOnWebsocketAt = null;
+  createdAt = new Date();
+  firstMessageReceivedAt = null;
 
-  socket = new WebSocket(websocketUrl);
+  socket = new WebSocket(url);
 
   socket.onopen = () => {
-    log(`Opening websocket to ${websocketUrl}`);
+    log(`Opening websocket to ${url}`);
     dispatch(openWebsocket());
   };
 
   socket.onclose = () => {
     clearTimeout(reconnectTimer);
-    log(`Closing websocket to ${websocketUrl}`, socket.readyState);
+    log(`Closing websocket to ${url}`, socket.readyState);
     socket = null;
     dispatch(closeWebsocket());
 
     if (continuePolling && !isPausedSelector(getState())) {
       reconnectTimer = setTimeout(() => {
-        createWebsocket(websocketUrl, getState, dispatch);
+        createWebsocket(topologyId, getState, dispatch);
       }, reconnectTimerInterval);
     }
   };
 
   socket.onerror = () => {
-    log(`Error in websocket to ${websocketUrl}`);
-    dispatch(receiveError(websocketUrl));
+    log(`Error in websocket to ${url}`);
+    dispatch(receiveError(url));
   };
 
   socket.onmessage = (event) => {
@@ -157,15 +162,17 @@ function createWebsocket(websocketUrl, getState, dispatch) {
     dispatch(receiveNodesDelta(msg));
 
     // profiling (receiveNodesDelta triggers synchronous render)
-    if (!firstMessageOnWebsocketAt) {
-      firstMessageOnWebsocketAt = new Date();
-      const timeToFirstMessage = firstMessageOnWebsocketAt - createWebsocketAt;
+    if (!firstMessageReceivedAt) {
+      firstMessageReceivedAt = new Date();
+      const timeToFirstMessage = firstMessageReceivedAt - createdAt;
       if (timeToFirstMessage > FIRST_RENDER_TOO_LONG_THRESHOLD) {
         log('Time (ms) to first nodes render after websocket was created',
-          firstMessageOnWebsocketAt - createWebsocketAt);
+          firstMessageReceivedAt - createdAt);
       }
     }
   };
+
+  websocketInfoByTopology[topologyId] = { createdAt, firstMessageReceivedAt, url, socket };
 }
 
 /**
@@ -266,16 +273,19 @@ export function getTopologies(getState, dispatch, initialPoll = false) {
 }
 
 function updateWebsocketChannel(getState, dispatch, forceRequest) {
-  const topologyUrl = getCurrentTopologyUrl(getState());
-  const topologyOptions = activeTopologyOptionsSelector(getState());
+  const topologyId = getState().get('currentTopologyId');
+  const topologyUrl = getState().getIn(['topologyUrlsById', topologyId]);
+  const topologyOptions = getState().getIn(['topologyOptions', topologyId]);
   const websocketUrl = buildWebsocketUrl(topologyUrl, topologyOptions, getState());
   // Only recreate websocket if url changed or if forced (weave cloud instance reload);
-  const isNewUrl = websocketUrl !== currentUrl;
+  websocketInfoByTopology[topologyId] = websocketInfoByTopology[topologyId] || {};
+  const { socket, url } = websocketInfoByTopology[topologyId];
+  const isNewUrl = websocketUrl !== url;
   // `topologyUrl` can be undefined initially, so only create a socket if it is truthy
   // and no socket exists, or if we get a new url.
   if (topologyUrl && (!socket || isNewUrl || forceRequest)) {
-    createWebsocket(websocketUrl, getState, dispatch);
-    currentUrl = websocketUrl;
+    websocketInfoByTopology[topologyId].url = websocketUrl;
+    createWebsocket(topologyId, getState, dispatch);
   }
 }
 
@@ -456,13 +466,14 @@ export function stopPolling() {
 
 export function teardownWebsockets() {
   clearTimeout(reconnectTimer);
-  if (socket) {
-    socket.onerror = null;
-    socket.onclose = null;
-    socket.onmessage = null;
-    socket.onopen = null;
-    socket.close();
-    socket = null;
-    currentUrl = null;
-  }
+  each(websocketInfoByTopology, ({ socket }) => {
+    if (socket) {
+      socket.onerror = null;
+      socket.onclose = null;
+      socket.onmessage = null;
+      socket.onopen = null;
+      socket.close();
+    }
+  });
+  websocketInfoByTopology = {};
 }

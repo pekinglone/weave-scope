@@ -19,13 +19,8 @@ import {
 
 const log = debug('scope:nodes-layout');
 
-// Used for ordering the resource nodes.
-const resourceNodeConsumptionComparator = (node) => {
-  const metricSummary = node.get('metricSummary');
-  return metricSummary.get('showCapacity') ?
-    -metricSummary.get('relativeConsumption') :
-    -metricSummary.get('absoluteConsumption');
-};
+// Sort nodes by LABEL for layout stability.
+const resourceNodeSortingComparator = node => node.get('label');
 
 // A list of topologies shown in the resource view of the active topology (bottom to top).
 export const layersTopologyIdsSelector = createSelector(
@@ -142,7 +137,7 @@ export const layoutNodesByTopologyIdSelector = createSelector(
         let currentOffset = parentNode.get('offset', 0);
 
         // Sort the nodes in the current bucket and lay them down one after another.
-        nodesBucket.sortBy(resourceNodeConsumptionComparator).forEach((node, nodeId) => {
+        nodesBucket.sortBy(resourceNodeSortingComparator).forEach((node, nodeId) => {
           const positionedNode = node.set('offset', currentOffset);
           positionedNodes = positionedNodes.set(nodeId, positionedNode);
           currentOffset += node.get('width');

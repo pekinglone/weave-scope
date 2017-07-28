@@ -185,7 +185,6 @@ describe('NodesLayout', () => {
     const result = NodesLayout.doLayout(
       nodeSets.initial4.nodes,
       nodeSets.initial4.edges);
-    // console.log('initial', result.get('nodes'));
     nodes = result.nodes.toJS();
 
     expect(nodes.n1.x).toBeLessThan(nodes.n2.x);

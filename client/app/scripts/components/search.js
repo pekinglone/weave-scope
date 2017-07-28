@@ -5,7 +5,7 @@ import { debounce } from 'lodash';
 
 import { blurSearch, doSearch, focusSearch, pinSearch, toggleHelp } from '../actions/app-actions';
 import { searchMatchCountByTopologySelector } from '../selectors/search';
-import { isResourceViewModeSelector } from '../selectors/topology';
+import { isResourceViewModeSelector, currentNodesSelector } from '../selectors/topology';
 import { slugify } from '../utils/string-utils';
 import { parseQuery } from '../utils/search-utils';
 import { isTopologyNodeCountZero } from '../utils/topology-utils';
@@ -177,7 +177,7 @@ class Search extends React.Component {
 
 export default connect(
   state => ({
-    nodes: state.get('nodes'),
+    nodes: currentNodesSelector(state),
     topologyViewMode: state.get('topologyViewMode'),
     isResourceViewMode: isResourceViewModeSelector(state),
     isTopologyNodeCountZero: isTopologyNodeCountZero(state),

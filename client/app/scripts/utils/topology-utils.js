@@ -156,12 +156,13 @@ export function isNodesDisplayEmpty(state) {
 export function getAdjacentNodes(state, originNodeId) {
   let adjacentNodes = makeSet();
   const nodeId = originNodeId || state.get('selectedNodeId');
+  const topologyId = state.get('currentTopologyId');
 
   if (nodeId) {
-    if (state.hasIn(['nodes', nodeId])) {
-      adjacentNodes = makeSet(state.getIn(['nodes', nodeId, 'adjacency']));
+    if (state.hasIn(['nodesByTopology', topologyId, nodeId])) {
+      adjacentNodes = makeSet(state.getIn(['nodesByTopology', topologyId, nodeId, 'adjacency']));
       // fill up set with reverse edges
-      state.get('nodes').forEach((node, id) => {
+      state.getIn(['nodesByTopology', topologyId]).forEach((node, id) => {
         if (node.get('adjacency') && node.get('adjacency').includes(nodeId)) {
           adjacentNodes = adjacentNodes.add(id);
         }
@@ -174,7 +175,8 @@ export function getAdjacentNodes(state, originNodeId) {
 
 export function hasSelectedNode(state) {
   const selectedNodeId = state.get('selectedNodeId');
-  return state.hasIn(['nodes', selectedNodeId]);
+  const topologyId = state.get('currentTopologyId');
+  return state.hasIn(['nodesByTopology', topologyId, selectedNodeId]);
 }
 
 export function getCurrentTopologyUrl(state) {

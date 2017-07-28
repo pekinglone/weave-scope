@@ -16,7 +16,7 @@ import {
 } from '../constants/naming';
 import {
   graphExceedsComplexityThreshSelector,
-  isResourceViewModeSelector,
+  currentNodesSelector,
 } from '../selectors/topology';
 import { isPausedSelector } from '../selectors/time-travel';
 import { activeTopologyZoomCacheKeyPathSelector } from '../selectors/zooming';
@@ -58,10 +58,8 @@ export const initialState = makeMap({
   mouseOverEdgeId: null,
   mouseOverNodeId: null,
   nodeDetails: makeOrderedMap(), // nodeId -> details
-  nodes: makeOrderedMap(), // nodeId -> node
   nodesLoaded: false,
-  // nodes cache, infrequently updated, used for search & resource view
-  nodesByTopology: makeMap(), // topologyId -> nodes
+  nodesByTopology: makeMap(), // topologyId -> nodeId -> node
   // class of metric, e.g. 'cpu', rather than 'host_cpu' or 'process_cpu'.
   // allows us to keep the same metric "type" selected when the topology changes.
   pausedAt: null,
@@ -175,8 +173,11 @@ function closeAllNodeDetails(state) {
 }
 
 function clearNodes(state) {
+  const topologyId = state.get('currentTopologyId');
+  if (!topologyId) return state;
+
   return state
-    .update('nodes', nodes => nodes.clear())
+    .updateIn(['nodesByTopology', topologyId], nodes => nodes.clear())
     .set('nodesLoaded', false);
 }
 
@@ -186,19 +187,12 @@ function updateStateFromNodes(state) {
   state = applyPinnedSearches(state);
 
   // In case node or edge disappears before mouseleave event.
-  const nodesIds = state.get('nodes').keySeq();
+  const nodesIds = currentNodesSelector(state).keySeq();
   if (!nodesIds.contains(state.get('mouseOverNodeId'))) {
     state = state.set('mouseOverNodeId', null);
   }
   if (!nodesIds.some(nodeId => includes(state.get('mouseOverEdgeId'), nodeId))) {
     state = state.set('mouseOverEdgeId', null);
-  }
-
-  // Update the nodes cache only if we're not in the resource view mode, as we
-  // intentionally want to keep it static before we figure how to keep it up-to-date.
-  if (!isResourceViewModeSelector(state)) {
-    const nodesForCurrentTopologyKey = ['nodesByTopology', state.get('currentTopologyId')];
-    state = state.setIn(nodesForCurrentTopologyKey, state.get('nodes'));
   }
 
   // Clear the error.
@@ -588,36 +582,38 @@ export function rootReducer(state = initialState, action) {
         'add', size(action.delta.add),
         'reset', action.delta.reset);
 
+      const topologyId = state.get('currentTopologyId');
       if (action.delta.reset) {
-        state = state.set('nodes', makeMap());
+        state = state.setIn(['nodesByTopology', topologyId], makeMap());
       }
 
       // remove nodes that no longer exist
       each(action.delta.remove, (nodeId) => {
-        state = state.deleteIn(['nodes', nodeId]);
+        state = state.deleteIn(['nodesByTopology', topologyId, nodeId]);
       });
 
       // update existing nodes
       each(action.delta.update, (node) => {
-        if (state.hasIn(['nodes', node.id])) {
+        if (state.hasIn(['nodesByTopology', topologyId, node.id])) {
           // TODO: Implement a manual deep update here, as it might bring a great benefit
           // to our nodes selectors (e.g. layout engine would be completely bypassed if the
           // adjacencies would stay the same but the metrics would get updated).
-          state = state.setIn(['nodes', node.id], fromJS(node));
+          state = state.setIn(['nodesByTopology', topologyId, node.id], fromJS(node));
         }
       });
 
       // add new nodes
       each(action.delta.add, (node) => {
-        state = state.setIn(['nodes', node.id], fromJS(node));
+        state = state.setIn(['nodesByTopology', topologyId, node.id], fromJS(node));
       });
 
       return updateStateFromNodes(state);
     }
 
     case ActionTypes.RECEIVE_NODES: {
+      const currentTopologyId = state.get('currentTopologyId');
+      state = state.setIn(['nodesByTopology', currentTopologyId], fromJS(action.nodes));
       state = state.set('timeTravelTransitioning', false);
-      state = state.set('nodes', fromJS(action.nodes));
       state = state.set('nodesLoaded', true);
       return updateStateFromNodes(state);
     }

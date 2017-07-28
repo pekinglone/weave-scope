@@ -3,7 +3,12 @@ import { createMapSelector, createListSelector } from 'reselect-map';
 import { fromJS, Map as makeMap, List as makeList } from 'immutable';
 
 import { modulo } from '../utils/math-utils';
-import { isGraphViewModeSelector, isResourceViewModeSelector } from '../selectors/topology';
+import {
+  isGraphViewModeSelector,
+  isResourceViewModeSelector,
+  currentNodesSelector,
+} from '../selectors/topology';
+
 import { RESOURCE_VIEW_METRICS } from '../constants/resources';
 
 
@@ -14,7 +19,7 @@ export const availableMetricsSelector = createSelector(
   [
     isGraphViewModeSelector,
     isResourceViewModeSelector,
-    state => state.get('nodes'),
+    currentNodesSelector,
   ],
   (isGraphView, isResourceView, nodes) => {
     // In graph view, we always look through the fresh state
@@ -106,7 +111,7 @@ const topCardNodeSelector = createSelector(
 
 export const nodeMetricSelector = createMapSelector(
   [
-    state => state.get('nodes'),
+    currentNodesSelector,
     selectedMetricIdSelector,
     topCardNodeSelector,
   ],

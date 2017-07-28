@@ -3,6 +3,7 @@ import { createMapSelector } from 'reselect-map';
 import { Map as makeMap } from 'immutable';
 
 import { parseQuery, searchNode, searchTopology, getSearchableFields } from '../utils/search-utils';
+import { currentNodesSelector } from './topology';
 
 
 const parsedSearchQuerySelector = createSelector(
@@ -14,7 +15,7 @@ const parsedSearchQuerySelector = createSelector(
 
 export const searchNodeMatchesSelector = createMapSelector(
   [
-    state => state.get('nodes'),
+    currentNodesSelector,
     parsedSearchQuerySelector,
   ],
   (node, parsed) => (parsed ? searchNode(node, parsed) : makeMap())
@@ -32,7 +33,7 @@ export const searchMatchCountByTopologySelector = createMapSelector(
 
 export const searchableFieldsSelector = createSelector(
   [
-    state => state.get('nodes'),
+    currentNodesSelector,
   ],
   getSearchableFields
 );

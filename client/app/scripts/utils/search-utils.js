@@ -282,7 +282,8 @@ export function getSearchableFields(nodes) {
  */
 export function applyPinnedSearches(state) {
   // clear old filter state
-  state = state.update('nodes',
+  const topologyId = state.get('currentTopologyId');
+  state = state.updateIn(['nodesByTopology', topologyId],
     nodes => nodes.map(node => node.set('filtered', false)));
 
   const pinnedSearches = state.get('pinnedSearches');
@@ -290,13 +291,13 @@ export function applyPinnedSearches(state) {
     state.get('pinnedSearches').forEach((query) => {
       const parsed = parseQuery(query);
       if (parsed) {
-        const nodeMatches = searchTopology(state.get('nodes'), parsed);
-        const filteredNodes = state.get('nodes')
+        const nodeMatches = searchTopology(state.getIn(['nodesByTopology', topologyId]), parsed);
+        const filteredNodes = state.getIn(['nodesByTopology', topologyId])
           .map(node => node.set('filtered',
             node.get('filtered') // matched by previous pinned search
             || nodeMatches.size === 0 // no match, filter all nodes
             || !nodeMatches.has(node.get('id')))); // filter matches
-        state = state.set('nodes', filteredNodes);
+        state = state.setIn(['nodesByTopology', topologyId], filteredNodes);
       }
     });
   }

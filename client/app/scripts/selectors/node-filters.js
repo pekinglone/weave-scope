@@ -1,14 +1,14 @@
 import { createSelector } from 'reselect';
 import { fromJS } from 'immutable';
 
-import { isResourceViewModeSelector } from './topology';
+import { isResourceViewModeSelector, currentNodesSelector } from './topology';
 import { layoutNodesByTopologyIdSelector } from './resource-view/layout';
 import { RESOURCE_VIEW_LAYERS } from '../constants/resources';
 
 
 export const shownNodesSelector = createSelector(
   [
-    state => state.get('nodes'),
+    currentNodesSelector,
   ],
   nodes => nodes.filter(node => !node.get('filtered'))
 );

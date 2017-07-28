@@ -11,6 +11,7 @@ import ActionTypes from '../constants/action-types';
 import { receiveNodesDelta } from '../actions/app-actions';
 import { getNodeColor, getNodeColorDark, text2degree } from '../utils/color-utils';
 import { availableMetricsSelector } from '../selectors/node-metric';
+import { currentNodesSelector } from '../selectors/topology';
 
 
 const SHAPES = ['square', 'hexagon', 'heptagon', 'circle'];
@@ -226,7 +227,9 @@ class DebugToolbar extends React.Component {
             this.shortLivedNodes = this.shortLivedNodes.rest();
             nextNodes = nextNodes.setIn([returningNode, 'filtered'], false);
           }
-          this.asyncDispatch(setAppState(state => state.set('nodes', nextNodes)));
+          this.asyncDispatch(setAppState(state => (
+            state.setIn(['nodesByTopology', state.get('currentTopologyId')], nextNodes)
+          )));
         }
       }, 1000);
     }
@@ -379,7 +382,7 @@ class DebugToolbar extends React.Component {
 
 function mapStateToProps(state) {
   return {
-    nodes: state.get('nodes'),
+    nodes: currentNodesSelector(state),
     availableMetrics: availableMetricsSelector(state),
   };
 }

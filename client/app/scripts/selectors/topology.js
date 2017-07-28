@@ -39,6 +39,14 @@ export const resourceViewAvailableSelector = createSelector(
   layersTopologyIds => !layersTopologyIds.isEmpty()
 );
 
+export const currentNodesSelector = createSelector(
+  [
+    state => state.get('currentTopologyId'),
+    state => state.get('nodesByTopology'),
+  ],
+  (topologyId, nodesByTopology) => nodesByTopology.get(topologyId) || makeMap()
+);
+
 // Checks if graph complexity is high. Used to trigger
 // table view on page load and decide on animations.
 export const graphExceedsComplexityThreshSelector = createSelector(

@@ -4,6 +4,7 @@ import { scaleThreshold } from 'd3-scale';
 import { fromJS, Set as makeSet, List as makeList } from 'immutable';
 
 import { NODE_BASE_SIZE } from '../../constants/styles';
+import { currentNodesSelector } from '../../selectors/topology';
 import { graphNodesSelector, graphEdgesSelector } from './graph';
 import { graphZoomStateSelector } from './zoom';
 import {
@@ -48,7 +49,7 @@ const selectedNodeIdSelector = createSelector(
 const focusedNodesIdsSelector = createSelector(
   [
     selectedNodeIdSelector,
-    state => state.get('nodes'),
+    currentNodesSelector,
   ],
   (selectedNodeId, nodes) => {
     if (!selectedNodeId || nodes.isEmpty()) {

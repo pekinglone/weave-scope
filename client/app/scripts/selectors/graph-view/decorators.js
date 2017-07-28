@@ -2,12 +2,13 @@ import { createSelector } from 'reselect';
 import { Set as makeSet } from 'immutable';
 
 import { constructEdgeId, getNodesFromEdgeId } from '../../utils/layouter-utils';
+import { currentNodesSelector } from '../../selectors/topology';
 
 
 const adjacentToHoveredNodeIdsSelector = createSelector(
   [
     state => state.get('mouseOverNodeId'),
-    state => state.get('nodes'),
+    currentNodesSelector,
   ],
   (mouseOverNodeId, nodes) => {
     let nodeIds = makeSet();

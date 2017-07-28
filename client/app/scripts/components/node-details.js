@@ -9,6 +9,7 @@ import { brightenColor, getNeutralColor, getNodeColorDark } from '../utils/color
 import { isGenericTable, isPropertyList } from '../utils/node-details-utils';
 import { resetDocumentTitle, setDocumentTitle } from '../utils/title-utils';
 import { timestampsEqual } from '../utils/time-utils';
+import { currentNodesSelector } from '../selectors/topology';
 
 import Overlay from './overlay';
 import MatchedText from './matched-text';
@@ -293,8 +294,8 @@ function mapStateToProps(state, ownProps) {
   const currentTopologyId = state.get('currentTopologyId');
   return {
     transitioning: !timestampsEqual(state.get('pausedAt'), ownProps.timestamp),
+    nodes: currentNodesSelector(state),
     nodeMatches: state.getIn(['searchNodeMatches', currentTopologyId, ownProps.id]),
-    nodes: state.get('nodes'),
     selectedNodeId: state.get('selectedNodeId'),
   };
 }

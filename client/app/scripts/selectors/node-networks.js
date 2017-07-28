@@ -2,6 +2,8 @@ import { createSelector } from 'reselect';
 import { createMapSelector } from 'reselect-map';
 import { fromJS, List as makeList, Map as makeMap } from 'immutable';
 
+import { currentNodesSelector } from './topology';
+
 
 const NETWORKS_ID = 'docker_container_networks';
 
@@ -9,7 +11,7 @@ const NETWORKS_ID = 'docker_container_networks';
 // to not rely on field IDs here. should be determined by topology implementer.
 export const nodeNetworksSelector = createMapSelector(
   [
-    state => state.get('nodes'),
+    currentNodesSelector,
   ],
   (node) => {
     const metadata = node.get('metadata', makeList());
